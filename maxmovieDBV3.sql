@@ -584,6 +584,7 @@ COPY bond (bond_id, quantity, seniority, start_date, end_date) FROM stdin;
 1	1	2	\N	\N
 2	5	3	\N	\N
 3	5.5	4	\N	\N
+4	0	0	\N	\N
 \.
 
 
@@ -592,6 +593,10 @@ COPY bond (bond_id, quantity, seniority, start_date, end_date) FROM stdin;
 --
 
 COPY bond_assigned (person_id, bond_id, start_date, end_date, status) FROM stdin;
+1	4	2018-01-29	\N	Active  
+2	4	2018-01-29	\N	Active  
+4	4	2018-01-29	\N	Active  
+88	4	2018-01-29	\N	Active  
 \.
 
 
@@ -599,7 +604,7 @@ COPY bond_assigned (person_id, bond_id, start_date, end_date, status) FROM stdin
 -- Name: bond_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('bond_id_seq', 3, true);
+SELECT pg_catalog.setval('bond_id_seq', 4, true);
 
 
 --
