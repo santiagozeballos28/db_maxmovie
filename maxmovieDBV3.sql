@@ -116,7 +116,7 @@ ALTER TABLE public.bond OWNER TO postgres;
 --
 
 CREATE TABLE bond_assigned (
-    person_id integer,
+    employee_data_id integer,
     bond_id integer,
     start_date date,
     end_date date,
@@ -202,11 +202,30 @@ ALTER SEQUENCE copy_movie_copy_movie_id_seq OWNED BY copy_movie.copy_movie_id;
 
 
 --
--- Name: data_job; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: employee_data; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
-CREATE TABLE data_job (
-    person_id integer,
+CREATE TABLE employee_data (
+    employee_data_id integer NOT NULL,
+    date_of_hire date,
+    address character varying(100),
+    job_id integer,
+    enable_rent boolean DEFAULT false NOT NULL,
+    create_user integer,
+    create_date timestamp without time zone,
+    modifier_user integer,
+    modifier_date timestamp without time zone
+);
+
+
+ALTER TABLE public.employee_data OWNER TO postgres;
+
+--
+-- Name: employee_data_history; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE employee_data_history (
+    employee_data_id integer,
     date_of_hire date,
     address character varying(100),
     job_id integer,
@@ -215,33 +234,11 @@ CREATE TABLE data_job (
     create_date timestamp without time zone,
     modifier_user integer,
     modifier_date timestamp without time zone,
-    status status,
-    data_job_id integer NOT NULL
+    status status
 );
 
 
-ALTER TABLE public.data_job OWNER TO postgres;
-
---
--- Name: data_job_data_job_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE data_job_data_job_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.data_job_data_job_id_seq OWNER TO postgres;
-
---
--- Name: data_job_data_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE data_job_data_job_id_seq OWNED BY data_job.data_job_id;
-
+ALTER TABLE public.employee_data_history OWNER TO postgres;
 
 --
 -- Name: genre_movie; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
@@ -296,11 +293,11 @@ CREATE TABLE master_detail (
     master_detail_id integer NOT NULL,
     amount_total integer,
     price_total double precision,
-    data_job_id integer,
     create_date timestamp without time zone,
     modifier_date timestamp without time zone,
     modifier_user integer,
-    renter_user integer
+    renter_user integer,
+    create_user integer
 );
 
 
@@ -434,13 +431,13 @@ ALTER SEQUENCE person_id_seq OWNED BY person.person_id;
 --
 
 CREATE TABLE phone (
+    employee_data_id integer,
     number_phone integer NOT NULL,
-    person_id integer,
     create_user integer,
-    modifier_user integer,
     create_date timestamp without time zone,
+    modifier_user integer,
     modifier_date timestamp without time zone,
-    status status DEFAULT 'Active'::bpchar
+    status status
 );
 
 
@@ -486,7 +483,7 @@ ALTER TABLE public.rental_detail OWNER TO postgres;
 --
 
 CREATE TABLE salary (
-    employee_id integer,
+    employee_data_id integer,
     net_salary double precision,
     bond double precision,
     liquid_salary double precision,
@@ -516,13 +513,6 @@ ALTER TABLE ONLY bond ALTER COLUMN bond_id SET DEFAULT nextval('bond_id_seq'::re
 --
 
 ALTER TABLE ONLY copy_movie ALTER COLUMN copy_movie_id SET DEFAULT nextval('copy_movie_copy_movie_id_seq'::regclass);
-
-
---
--- Name: data_job_id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY data_job ALTER COLUMN data_job_id SET DEFAULT nextval('data_job_data_job_id_seq'::regclass);
 
 
 --
@@ -566,6 +556,9 @@ COPY actor (actor_id, name_actor, create_user, create_date, modifier_user, modif
 15	Patrick Wilson	2	2018-01-18 11:50:00.103	\N	\N	Active  
 16	Ron Livingston	2	2018-01-18 11:50:00.103	\N	\N	Active  
 17	Lili Taylor	2	2018-01-18 16:02:48.853	\N	\N	Active  
+18	Tobi'n Bell	2	2018-01-31 11:38:17.663	\N	\N	Active  
+19	Cary Elwes	2	2018-01-31 11:49:31.315	\N	\N	Active  
+20	Danny Glover	2	2018-01-31 11:49:31.315	\N	\N	Active  
 \.
 
 
@@ -573,7 +566,7 @@ COPY actor (actor_id, name_actor, create_user, create_date, modifier_user, modif
 -- Name: actor_actor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('actor_actor_id_seq', 17, true);
+SELECT pg_catalog.setval('actor_actor_id_seq', 20, true);
 
 
 --
@@ -592,11 +585,11 @@ COPY bond (bond_id, quantity, seniority, start_date, end_date) FROM stdin;
 -- Data for Name: bond_assigned; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY bond_assigned (person_id, bond_id, start_date, end_date, status) FROM stdin;
-1	4	2018-01-29	\N	Active  
-2	4	2018-01-29	\N	Active  
-4	4	2018-01-29	\N	Active  
-88	4	2018-01-29	\N	Active  
+COPY bond_assigned (employee_data_id, bond_id, start_date, end_date, status) FROM stdin;
+1	4	2018-01-31	\N	Active  
+2	4	2018-01-31	\N	Active  
+4	4	2018-01-31	\N	Active  
+88	4	2018-01-31	\N	Active  
 \.
 
 
@@ -641,26 +634,27 @@ SELECT pg_catalog.setval('copy_movie_copy_movie_id_seq', 13, true);
 
 
 --
--- Data for Name: data_job; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: employee_data; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY data_job (person_id, date_of_hire, address, job_id, enable_rent, create_user, create_date, modifier_user, modifier_date, status, data_job_id) FROM stdin;
-1	1990-11-13	Av. Siglo XX	1	f	\N	\N	\N	\N	Active  	1
-2	2010-11-13	Av. Ayacucho	2	f	\N	\N	\N	\N	Active  	2
-4	2017-12-12	Av America	3	t	\N	\N	\N	\N	Active  	3
-88	2000-01-13	Av. Simon Bolivar	3	t	2	2018-01-13 17:20:24.652	1	2018-01-13 18:16:53.716	Inactive	4
-88	2016-02-10	Av. Simon Bolivar	4	f	1	2018-01-13 18:16:53.716	1	2018-01-13 18:53:46.461	Inactive	5
-88	2016-02-10	Av. Simon Bolivar	4	f	1	2018-01-13 18:49:33.519	1	2018-01-13 18:53:46.461	Inactive	6
-88	2016-02-10	Av. Simon Bolivar	4	f	1	2018-01-13 18:52:49.217	1	2018-01-13 18:53:46.461	Inactive	7
-88	2016-02-10	Av. Simon Bolivar	4	f	1	2018-01-13 18:53:46.461	\N	\N	Active  	8
+COPY employee_data (employee_data_id, date_of_hire, address, job_id, enable_rent, create_user, create_date, modifier_user, modifier_date) FROM stdin;
+1	2012-12-20	Av. Siglo XX	1	t	1	2017-12-13 14:53:30.984	\N	\N
+2	2012-12-25	Av. Republica	2	t	1	2017-12-13 14:53:30.984	\N	\N
+4	2015-12-25	Av. America	3	t	2	2017-12-25 14:53:30.984	\N	\N
+88	2018-01-13	Av. Santa Cruz	4	t	2	2018-01-13 17:20:24.652	\N	\N
 \.
 
 
 --
--- Name: data_job_data_job_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Data for Name: employee_data_history; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('data_job_data_job_id_seq', 8, true);
+COPY employee_data_history (employee_data_id, date_of_hire, address, job_id, enable_rent, create_user, create_date, modifier_user, modifier_date, status) FROM stdin;
+1	2012-12-20	Av. Siglo XX	1	t	1	2017-12-13 14:53:30.984	\N	\N	Active  
+2	2012-12-25	Av. Republica	2	t	1	2017-12-13 14:53:30.984	\N	\N	Active  
+4	2015-12-25	Av. America	3	t	2	2017-12-25 14:53:30.984	\N	\N	Active  
+88	2018-01-13	Av. Santa Cruz	4	t	2	2018-01-13 17:20:24.652	\N	\N	Active  
+\.
 
 
 --
@@ -668,9 +662,10 @@ SELECT pg_catalog.setval('data_job_data_job_id_seq', 8, true);
 --
 
 COPY genre_movie (genre_movie_id, genre_name) FROM stdin;
-SF	Science fiction
 HOR	Horror
 COM	Comedy
+SF	Science Fiction
+SUSP	Suspense
 \.
 
 
@@ -697,12 +692,12 @@ SELECT pg_catalog.setval('job_id_seq', 4, true);
 -- Data for Name: master_detail; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY master_detail (master_detail_id, amount_total, price_total, data_job_id, create_date, modifier_date, modifier_user, renter_user) FROM stdin;
-1	50	440	4	2018-01-23 16:33:38.671	\N	\N	3
-9	5	44	4	2018-01-25 11:29:35.402	\N	\N	86
-10	5	44	4	2018-01-25 11:29:35.402	\N	\N	86
-11	30	180	4	2018-01-25 11:46:07.345	\N	\N	86
-12	30	180	4	2018-01-25 11:46:07.345	\N	\N	86
+COPY master_detail (master_detail_id, amount_total, price_total, create_date, modifier_date, modifier_user, renter_user, create_user) FROM stdin;
+1	50	440	2018-01-23 16:33:38.671	\N	\N	3	\N
+9	5	44	2018-01-25 11:29:35.402	\N	\N	86	\N
+10	5	44	2018-01-25 11:29:35.402	\N	\N	86	\N
+11	30	180	2018-01-25 11:46:07.345	\N	\N	86	\N
+12	30	180	2018-01-25 11:46:07.345	\N	\N	86	\N
 \.
 
 
@@ -719,8 +714,9 @@ SELECT pg_catalog.setval('master_detail_master_detail_id_seq', 12, true);
 
 COPY movie (movie_id, movie_name, director_name, movie_year, oscar_nomination, genre_movie_id, create_user, create_date, modifier_user, modifier_date, status) FROM stdin;
 10	The Walking Dead	 Frank Darabont	2010	0	HOR	2	2018-01-18 11:37:56.323	\N	\N	Active  
-11	The Conjuring 2	Frank Dar	2013	2	HOR	2	2018-01-18 11:50:00.103	2	2018-01-18 16:02:48.853	Active  
 1	Silicon Valley	Carrie Kemper	2000	0	SF	1	2018-01-16 09:51:30.963	1	2018-01-26 10:56:34.565	Active  
+11	The Conjuring 2	Frank Dar	2013	2	HOR	2	2018-01-18 11:50:00.103	2	2018-01-31 11:38:17.663	Active  
+12	Saw	 Leigh Whannell	2004	0	HOR	2	2018-01-31 11:49:31.315	\N	\N	Active  
 \.
 
 
@@ -728,7 +724,7 @@ COPY movie (movie_id, movie_name, director_name, movie_year, oscar_nomination, g
 -- Name: movie_movie_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('movie_movie_id_seq', 11, true);
+SELECT pg_catalog.setval('movie_movie_id_seq', 12, true);
 
 
 --
@@ -745,6 +741,11 @@ COPY participate (movie_id, actor_id, create_user, create_date, modifier_user, m
 11	12	2	2018-01-18 11:50:00.103	\N	\N	Active  
 11	16	2	2018-01-18 11:50:00.103	2	2018-01-18 16:02:48.853	Inactive
 11	17	2	2018-01-18 16:02:48.853	\N	\N	Active  
+11	18	2	2018-01-31 11:38:17.663	\N	\N	Active  
+11	16	2	2018-01-31 11:38:17.663	\N	\N	Active  
+12	19	2	2018-01-31 11:49:31.315	\N	\N	Active  
+12	20	2	2018-01-31 11:49:31.315	\N	\N	Active  
+12	18	2	2018-01-31 11:49:31.315	\N	\N	Active  
 \.
 
 
@@ -758,13 +759,10 @@ COPY person (person_id, type_identifier, identifier, last_name, first_name, genr
 3	CI                  	6634564	Parra Montanio	Juan	M	2002-12-13	2	1	2017-12-25 14:53:30.984	\N	Active  
 4	NIT                 	77788655	Zeballos	Jhon	M	1992-05-25	2	2	2017-12-25 14:53:30.984	\N	Active  
 68	CI                  	21212100	Claure Arnez	Marcelo	M	1991-11-30	1	\N	2017-12-25 14:53:30.984	\N	Active  
-75	CI                  	1230055	Flores Santos	Maria	F	1992-11-13	2	1	2018-01-13 14:53:30.984	\N	Active  
 88	PASS                	SSS123457	Gozales Mena	Sheyla	F	2000-01-12	2	1	2018-01-13 17:20:24.652	2018-01-13 18:53:46.461	Active  
 89	PASS                	JJJ435343	Patsi	Marleny	M	1983-01-13	2	\N	2018-01-25 19:13:15.67	\N	Active  
-90	PASS                	JJJ435343C	Ortiz Mamani	Juia Carla	M	1993-01-23	2	\N	2018-01-25 19:14:52.757	\N	Active  
 87	PASS                	SSS123456	Mamani Paredes	Belen	F	2000-01-14	2	2	2018-01-13 16:23:47.322	2018-01-13 16:41:06.782	Active  
 86	PASS                	SSS435343X	Gonzales Mamani	Jacie'el	M	2000-01-13	2	1	2018-01-13 14:53:30.984	2018-01-13 15:00:17.993	Active  
-73	CI                  	1230011	Flores Santos	Genaro	M	1992-11-13	2	2	2017-12-25 14:53:30.984	2018-01-26 10:38:28.907	Active  
 \.
 
 
@@ -772,22 +770,22 @@ COPY person (person_id, type_identifier, identifier, last_name, first_name, genr
 -- Name: person_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('person_id_seq', 90, true);
+SELECT pg_catalog.setval('person_id_seq', 92, true);
 
 
 --
 -- Data for Name: phone; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY phone (number_phone, person_id, create_user, modifier_user, create_date, modifier_date, status) FROM stdin;
-77973186	1	\N	\N	\N	\N	Active  
-74839001	1	\N	\N	\N	\N	Active  
-74839221	2	\N	\N	\N	\N	Active  
-74444441	4	1	\N	\N	\N	Active  
-74444442	4	1	\N	\N	\N	Active  
-67978822	88	2	\N	2018-01-13 17:20:24.652	\N	Active  
-5787622	88	2	1	2018-01-13 17:20:24.652	2018-01-13 18:16:53.716	Inactive
-4111111	88	1	\N	2018-01-13 18:16:53.716	\N	Active  
+COPY phone (employee_data_id, number_phone, create_user, create_date, modifier_user, modifier_date, status) FROM stdin;
+1	671111111	1	2017-12-13 14:53:30.984	\N	\N	Active  
+1	761111111	1	2017-12-13 14:53:30.984	\N	\N	Active  
+2	67222222	1	2017-12-13 14:53:30.984	\N	\N	Active  
+2	76222222	1	2017-12-13 14:53:30.984	\N	\N	Active  
+4	67444444	2	2017-12-25 14:53:30.984	\N	\N	Active  
+4	76444444	2	2017-12-25 14:53:30.984	\N	\N	Active  
+88	67888888	2	2018-01-13 17:20:24.652	\N	\N	Active  
+88	76888888	2	2018-01-13 17:20:24.652	\N	\N	Active  
 \.
 
 
@@ -819,11 +817,11 @@ COPY rental_detail (rental_amount, return_amount, return_date, rental_price, ren
 -- Data for Name: salary; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY salary (employee_id, net_salary, bond, liquid_salary, end_date, status) FROM stdin;
+COPY salary (employee_data_id, net_salary, bond, liquid_salary, end_date, status) FROM stdin;
 1	10000	\N	\N	\N	Active  
 2	8000	\N	\N	\N	Active  
-4	6500	\N	\N	\N	Active  
-88	6500	\N	\N	\N	Active  
+4	7000	\N	\N	\N	Active  
+88	5000	\N	\N	\N	Active  
 \.
 
 
@@ -852,11 +850,11 @@ ALTER TABLE ONLY copy_movie
 
 
 --
--- Name: data_job_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: employee_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
-ALTER TABLE ONLY data_job
-    ADD CONSTRAINT data_job_pkey PRIMARY KEY (data_job_id);
+ALTER TABLE ONLY employee_data
+    ADD CONSTRAINT employee_pkey PRIMARY KEY (employee_data_id);
 
 
 --
@@ -916,11 +914,11 @@ ALTER TABLE ONLY bond_assigned
 
 
 --
--- Name: bond_assigned_person_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: bond_assigned_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY bond_assigned
-    ADD CONSTRAINT bond_assigned_person_id_fkey FOREIGN KEY (person_id) REFERENCES person(person_id);
+    ADD CONSTRAINT bond_assigned_employee_id_fkey FOREIGN KEY (employee_data_id) REFERENCES employee_data(employee_data_id);
 
 
 --
@@ -956,19 +954,19 @@ ALTER TABLE ONLY copy_movie
 
 
 --
--- Name: data_job_id_job_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: employee_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY data_job
-    ADD CONSTRAINT data_job_id_job_fkey FOREIGN KEY (job_id) REFERENCES job(job_id);
+ALTER TABLE ONLY employee_data
+    ADD CONSTRAINT employee_employee_id_fkey FOREIGN KEY (employee_data_id) REFERENCES person(person_id);
 
 
 --
--- Name: data_job_id_person_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: employee_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY data_job
-    ADD CONSTRAINT data_job_id_person_fkey FOREIGN KEY (person_id) REFERENCES person(person_id);
+ALTER TABLE ONLY employee_data
+    ADD CONSTRAINT employee_job_id_fkey FOREIGN KEY (job_id) REFERENCES job(job_id);
 
 
 --
@@ -976,7 +974,7 @@ ALTER TABLE ONLY data_job
 --
 
 ALTER TABLE ONLY master_detail
-    ADD CONSTRAINT master_detail_create_user_fkey FOREIGN KEY (data_job_id) REFERENCES data_job(data_job_id);
+    ADD CONSTRAINT master_detail_create_user_fkey FOREIGN KEY (create_user) REFERENCES employee_data(employee_data_id);
 
 
 --
@@ -1012,11 +1010,11 @@ ALTER TABLE ONLY participate
 
 
 --
--- Name: phone_id_person_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: phone_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY phone
-    ADD CONSTRAINT phone_id_person_fkey FOREIGN KEY (person_id) REFERENCES person(person_id);
+    ADD CONSTRAINT phone_employee_id_fkey FOREIGN KEY (employee_data_id) REFERENCES employee_data(employee_data_id);
 
 
 --
@@ -1048,7 +1046,7 @@ ALTER TABLE ONLY rental_detail
 --
 
 ALTER TABLE ONLY salary
-    ADD CONSTRAINT salary_employee_id_fkey FOREIGN KEY (employee_id) REFERENCES person(person_id);
+    ADD CONSTRAINT salary_employee_id_fkey FOREIGN KEY (employee_data_id) REFERENCES employee_data(employee_data_id);
 
 
 --
